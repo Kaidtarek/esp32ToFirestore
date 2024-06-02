@@ -9,7 +9,7 @@ const int firestorePort = 443;
 const char *firestoreProjectID = "customesp32";
 const char *firestoreCollectionID = "parkData";
 const char *firestoreDocumentID = "UnivPark"; 
-const char *firestoreAPIKey = "AIzaSyAGopwhyX6dQKfpB3AV-6hNkaL7xb8hSoU";
+const char *firestoreAPIKey = "your api key";
 
 void sendDataToFirestore(); 
 
