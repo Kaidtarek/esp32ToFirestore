@@ -1,24 +1,41 @@
-
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <map>
 
-const char* ssid = "F11Pro";
-const char* password = "1144114411";
-
-const char* firestoreHost = "firestore.googleapis.com";
+const char *ssid = "F11Pro";
+const char *password = "1144114411";
+const char *firestoreHost = "firestore.googleapis.com";
 const int firestorePort = 443;
-const char* firestoreProjectID = "customesp32";
-const char* firestoreCollectionID = "parkData";
-const char* firestoreAPIKey = "AIzaSyAGopwhyX6dQKfpB3AV-6hNkaL7xb8hSoU";
+const char *firestoreProjectID = "customesp32";
+const char *firestoreCollectionID = "parkData";
+const char *firestoreDocumentID = "UnivPark"; 
+const char *firestoreAPIKey = "AIzaSyAGopwhyX6dQKfpB3AV-6hNkaL7xb8hSoU";
 
-void sendDataToFirestore(); // Function prototype declaration
+void sendDataToFirestore(); 
 
-void setup() {
+struct MyData
+{
+  int key;
+  bool value;
+};
+
+MyData myData[] = {
+  {1, true},
+  {2, false},
+  {3, true},
+  {4, false},
+  {5, true},
+  {6, false},
+};
+
+void setup()
+{
   Serial.begin(115200);
-  
+
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
@@ -27,31 +44,49 @@ void setup() {
   sendDataToFirestore();
 }
 
-void loop() {
-  // Nothing to do here for a simple one-time data upload
+void loop()
+{
 }
 
-void sendDataToFirestore() {
+void sendDataToFirestore()
+{
   HTTPClient http;
+
+  // Construct Firestore URL with document ID
+  String url = "https://" + String(firestoreHost) + "/v1/projects/" + String(firestoreProjectID) + "/databases/(default)/documents/" + String(firestoreCollectionID) + "/" + String(firestoreDocumentID) + "?key=" + String(firestoreAPIKey);
   
-  // Construct Firestore URL
-  String url = "https://" + String(firestoreHost) + "/v1/projects/" + String(firestoreProjectID) + "/databases/(default)/documents/" + String(firestoreCollectionID) + "?key=" + String(firestoreAPIKey);
+  // Construct Firestore JSON data with map data
+  String data = "{\"fields\": {\"parkData\": {\"mapValue\": {\"fields\": {";
 
-  // Construct Firestore JSON data
-  String data = "{\"fields\": {\"sensorValue\": {\"integerValue\": 123}}}";
+  int myDataSize = sizeof(myData) / sizeof(myData[0]);
+  for (int i = 0; i < myDataSize; i++) {
+    data += "\"" + String(myData[i].key) + "\": {\"stringValue\": \"" + (myData[i].value ? "true" : "false") + "\"}";
+    if (i < myDataSize - 1) {
+      data += ",";
+    }
+  }
 
-  // Send POST request to Firestore
+  data += "}}}}}";
+
+  Serial.println("JSON Payload:");
+  Serial.println(data);
+
   http.begin(url);
   http.addHeader("Content-Type", "application/json");
-  int httpResponseCode = http.POST(data);
-  if (httpResponseCode > 0) {
+  int httpResponseCode = http.PATCH(data); 
+
+  if (httpResponseCode > 0)
+  {
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
     String response = http.getString();
     Serial.println(response);
-  } else {
+  }
+  else
+  {
     Serial.print("Error code: ");
     Serial.println(httpResponseCode);
   }
+  
   http.end();
 }
